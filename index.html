@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TypeRush — Test de Vitesse de Frappe</title>
+  <meta name="description" content="TypeRush, le test de vitesse de frappe : mesurez votre WPM et votre précision en temps réel.">
+
+  <!-- Google Fonts : Space Grotesk pour l'interface, JetBrains Mono pour le texte à taper -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ====================== ARRIÈRE-PLAN DÉCORATIF ====================== -->
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <div class="app">
+
+    <!-- ====================== EN-TÊTE ====================== -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-mark">⌁</span>
+        <h1 class="logo-text">Type<span class="accent">Rush</span></h1>
+      </div>
+      <p class="tagline">Tapez. Chronométrez. Battez votre record.</p>
+    </header>
+
+    <!-- ====================== TABLEAU DE BORD (jauge + stats live) ====================== -->
+    <section class="dashboard" aria-label="Tableau de bord en temps réel">
+
+      <!-- Jauge de vitesse façon compteur -->
+      <div class="gauge-card">
+        <svg class="gauge" viewBox="0 0 200 120" aria-hidden="true">
+          <path class="gauge-track" d="M 20 110 A 80 80 0 0 1 180 110" />
+          <path class="gauge-fill" id="gaugeFill" d="M 20 110 A 80 80 0 0 1 180 110" />
+          <line class="gauge-needle" id="gaugeNeedle" x1="100" y1="110" x2="100" y2="40" />
+          <circle class="gauge-hub" cx="100" cy="110" r="6" />
+        </svg>
+        <div class="gauge-readout">
+          <span class="gauge-value" id="liveWpm">0</span>
+          <span class="gauge-unit">WPM</span>
+        </div>
+      </div>
+
+      <!-- Stats secondaires -->
+      <div class="stat-strip">
+        <div class="stat-box">
+          <span class="stat-label">Temps</span>
+          <span class="stat-value" id="liveTime">0.0s</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Précision</span>
+          <span class="stat-value" id="liveAccuracy">100%</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Erreurs</span>
+          <span class="stat-value" id="liveErrors">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== SÉLECTEUR DE NIVEAU ====================== -->
+    <nav class="level-selector" aria-label="Choix du niveau de difficulté">
+      <button class="level-btn active" data-level="facile" aria-pressed="true">
+        <span class="level-dot"></span> Facile
+      </button>
+      <button class="level-btn" data-level="moyen" aria-pressed="false">
+        <span class="level-dot"></span> Moyen
+      </button>
+      <button class="level-btn" data-level="difficile" aria-pressed="false">
+        <span class="level-dot"></span> Difficile
+      </button>
+    </nav>
+
+    <!-- ====================== ZONE DE FRAPPE PRINCIPALE ====================== -->
+    <main class="type-card">
+
+      <div class="type-card-head">
+        <span class="level-pill" id="currentLevelPill">Facile</span>
+        <span class="best-score" id="bestScoreDisplay">Record : —</span>
+      </div>
+
+      <!-- Texte à reproduire, rendu caractère par caractère via JS -->
+      <div class="text-display" id="textDisplay" aria-live="off"></div>
+
+      <!-- Champ de saisie réel, masqué visuellement mais focusable -->
+      <label for="typingInput" class="sr-only">Zone de saisie du test de frappe</label>
+      <textarea
+        id="typingInput"
+        class="typing-input"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="Cliquez ici et commencez à taper pour démarrer..."
+        aria-label="Zone de saisie du test de frappe"
+      ></textarea>
+
+      <div class="type-card-foot">
+        <button class="btn btn-ghost" id="restartBtn" type="button">
+          <span class="btn-icon">↻</span> Nouveau Test
+        </button>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ====================== TABLEAU DES MEILLEURS SCORES ====================== -->
+    <section class="scoreboard" aria-label="Meilleurs scores enregistrés">
+      <div class="score-card" data-level-card="facile">
+        <span class="score-card-label">Facile</span>
+        <span class="score-card-value" id="scoreFacile">—</span>
+      </div>
+      <div class="score-card" data-level-card="moyen">
+        <span class="score-card-label">Moyen</span>
+        <span class="score-card-value" id="scoreMoyen">—</span>
+      </div>
+      <div class="score-card" data-level-card="difficile">
+        <span class="score-card-label">Difficile</span>
+        <span class="score-card-value" id="scoreDifficile">—</span>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>TypeRush — fonctionne entièrement hors ligne, sans serveur ni dépendance.</p>
+    </footer>
+  </div>
+
+  <!-- ====================== OVERLAY DE RÉSULTATS ====================== -->
+  <div class="results-overlay" id="resultsOverlay" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+    <div class="results-card">
+      <p class="results-message" id="resultsMessage">Excellent !</p>
+      <h2 class="results-title" id="resultsTitle">Test terminé</h2>
+
+      <div class="results-grid">
+        <div class="result-item">
+          <span class="result-label">Temps</span>
+          <span class="result-value" id="resultTime">0.0s</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">WPM</span>
+          <span class="result-value" id="resultWpm">0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Précision</span>
+          <span class="result-value" id="resultAccuracy">0.00%</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Niveau</span>
+          <span class="result-value" id="resultLevel">Facile</span>
+        </div>
+      </div>
+
+      <div class="results-best" id="resultsBest">
+        <span class="results-best-label">Meilleur score (ce niveau)</span>
+        <span class="results-best-value" id="resultsBestValue">— WPM</span>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn btn-primary" id="resultsRestartBtn" type="button">
+          <span class="btn-icon">↻</span> Nouveau Test
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
